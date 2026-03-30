@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html><head><title>DealFlow Bridge</title></head>
+<body>
+<script>
+// DealFlow Bridge — reads companies from IndexedDB and sends to parent via postMessage
+// Usage: embed as iframe with ?key=CLIENT_API_KEY
+
+(async function() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const apiKey = params.get('key');
+    if (!apiKey) { reply({ error: 'No API key provided' }); return; }
+
+    // 1. Read clients from Zustand localStorage
+    const storeRaw = localStorage.getItem('dealflow-app-store');
+    if (!storeRaw) { reply({ error: 'DealFlow has no data. Open DealFlow first to initialize.' }); return; }
+    
+    let store;
+    try { store = JSON.parse(storeRaw); } catch { reply({ error: 'Failed to parse DealFlow store' }); return; }
+    
+    const stateData = store.state || store;
+    const clients = stateData.clients || [];
+    const client = clients.find(function(c) { return c.apiKey === apiKey; });
+    
+    if (!client) { reply({ error: 'Invalid API key. Create a client in DealFlow first.' }); return; }
+
+    // 2. Open IndexedDB and read companies shared with this client
+    const db = await openDB();
+    if (!db) { reply({ error: 'Could not open DealFlow database' }); return; }
+    
+    const tx = db.transaction('companies', 'readonly');
+    const store2 = tx.objectStore('companies');
+    const allCompanies = await getAllFromStore(store2);
+    
+    // Filter to companies shared with this client
+    const shared = allCompanies.filter(function(c) {
+      return c.client_ids && c.client_ids.includes(client.id);
+    });
+
+    reply({ 
+      type: 'dealflow-companies',
+      companies: shared,
+      total: shared.length,
+      clientName: client.name,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (err) {
+    reply({ error: 'Bridge error: ' + (err.message || err) });
+  }
+})();
+
+function reply(data) {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage(data, '*');
+  }
+}
+
+function openDB() {
+  return new Promise(function(resolve, reject) {
+    var request = indexedDB.open('dealflow-db');
+    request.onsuccess = function() { resolve(request.result); };
+    request.onerror = function() { resolve(null); };
+    // If DB doesn't exist, this will create it empty — that's fine
+    request.onupgradeneeded = function() { resolve(null); };
+  });
+}
+
+function getAllFromStore(store) {
+  return new Promise(function(resolve, reject) {
+    var request = store.getAll();
+    request.onsuccess = function() { resolve(request.result || []); };
+    request.onerror = function() { resolve([]); };
+  });
+}
+</script>
+</body>
+</html>
