@@ -59,48 +59,76 @@ export default function Qualification() {
     setEditing(null);
   }
 
+  const [error, setError] = useState<string | null>(null);
+
   async function runQualification(criteria: QualificationCriteria) {
     setRunning(true);
     setResults([]);
-    const { companies } = await getCompaniesPage(1, 100000, {
-      search: '', industry: '', geography: '', revenueMin: '', revenueMax: '',
-      employeesMin: '', employeesMax: '', status: '' as any, tags: [],
-    });
+    setError(null);
 
-    // Filter to client's companies if client selected
-    const toQualify = selectedClientId
-      ? companies.filter(c => c.client_ids?.includes(selectedClientId))
-      : companies;
-
-    setProgress({ current: 0, total: toQualify.length });
-    const out: typeof results = [];
-
-    for (let i = 0; i < toQualify.length; i++) {
-      const result = await qualifyCompanyWithCriteria(toQualify[i], criteria);
-      out.push({
-        company: toQualify[i],
-        score: result.score,
-        status: result.status,
-        breakdown: result.breakdown,
+    try {
+      const { companies } = await getCompaniesPage(1, 100000, {
+        search: '', industry: '', geography: '', revenueMin: '', revenueMax: '',
+        employeesMin: '', employeesMax: '', status: '' as any, tags: [],
       });
 
-      // Save score back
-      await updateCompany({
-        id: toQualify[i].id,
-        qualification_score: result.score,
-        qualification_status: result.status as 'qualified' | 'unqualified' | 'review',
-        qualification_result: result,
-      });
+      // Filter to client's companies if client selected
+      const toQualify = selectedClientId
+        ? companies.filter(c => c.client_ids?.includes(selectedClientId))
+        : companies;
 
-      if (i % 25 === 0) {
-        setProgress({ current: i, total: toQualify.length });
-        setResults([...out]);
+      if (toQualify.length === 0) {
+        setError(selectedClientId
+          ? 'No companies found assigned to this client. Upload companies first and assign them to the client.'
+          : 'No companies found in the database. Upload companies first via the Upload page.');
+        setRunning(false);
+        return;
       }
-    }
 
-    setResults(out);
-    setProgress({ current: toQualify.length, total: toQualify.length });
-    setRunning(false);
+      setProgress({ current: 0, total: toQualify.length });
+      const out: typeof results = [];
+
+      for (let i = 0; i < toQualify.length; i++) {
+        try {
+          const result = await qualifyCompanyWithCriteria(toQualify[i], criteria);
+          out.push({
+            company: toQualify[i],
+            score: result.score,
+            status: result.status,
+            breakdown: result.breakdown,
+          });
+
+          // Save score back
+          await updateCompany({
+            id: toQualify[i].id,
+            qualification_score: result.score,
+            qualification_status: result.status as 'qualified' | 'unqualified' | 'review',
+            qualification_result: result,
+          });
+        } catch (err) {
+          console.error(`Failed to qualify ${toQualify[i].company_name}:`, err);
+          out.push({
+            company: toQualify[i],
+            score: 0,
+            status: 'review',
+            breakdown: [{ criterion: 'Error', score: 0, weight: 0, reason: String(err) }],
+          });
+        }
+
+        if (i % 25 === 0) {
+          setProgress({ current: i, total: toQualify.length });
+          setResults([...out]);
+        }
+      }
+
+      setResults(out);
+      setProgress({ current: toQualify.length, total: toQualify.length });
+    } catch (err) {
+      console.error('Qualification error:', err);
+      setError(`Qualification failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setRunning(false);
+    }
   }
 
   const filteredResults = filter === 'all' ? results : results.filter(r => r.status === filter);
@@ -271,6 +299,13 @@ export default function Qualification() {
               </label>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="card border-[#E25950]/30 bg-[#FEF2F2]">
+          <p className="text-sm text-[#E25950] font-medium">{error}</p>
         </div>
       )}
 
