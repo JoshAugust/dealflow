@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { to: '/shares', icon: Link, label: 'Shares', emoji: '🔗' },
   { to: '/pipeline', icon: Kanban, label: 'Pipeline', emoji: '📋' },
   { to: '/qualification', icon: Shield, label: 'Qualification', emoji: '🛡️' },
+  { to: '/call-sheet', icon: Building2, label: 'Call Sheet', emoji: '📞' },
+  { to: '/enrichment', icon: Building2, label: 'Enrichment', emoji: '🔬' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics', emoji: '📈' },
   { to: '/api-docs', icon: BookOpen, label: 'API Docs', emoji: '📖' },
   { to: '/integrations', icon: Link, label: 'Integrations', emoji: '🔌' },

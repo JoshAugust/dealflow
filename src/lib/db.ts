@@ -3,7 +3,7 @@ import type { IDBPDatabase } from 'idb';
 import type { Company, ActivityLog, CompanyFilters, CompanyStatus } from './types';
 
 const DB_NAME = 'dealflow-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 

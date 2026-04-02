@@ -55,6 +55,52 @@ export interface QualificationResult {
   checked_at: string;
 }
 
+export type CallStatus =
+  | 'Not Called'
+  | 'Called - No Answer'
+  | 'Called - Left VM'
+  | 'Called - Spoke to Gatekeeper'
+  | 'Called - Spoke to DM'
+  | 'Callback Scheduled'
+  | 'Interested'
+  | 'Not Interested'
+  | 'Do Not Call';
+
+export const CALL_STATUSES: CallStatus[] = [
+  'Not Called',
+  'Called - No Answer',
+  'Called - Left VM',
+  'Called - Spoke to Gatekeeper',
+  'Called - Spoke to DM',
+  'Callback Scheduled',
+  'Interested',
+  'Not Interested',
+  'Do Not Call',
+];
+
+export const CALL_STATUS_COLORS: Record<CallStatus, { bg: string; text: string }> = {
+  'Not Called': { bg: '#F3F4F6', text: '#6B7280' },
+  'Called - No Answer': { bg: '#FFFBEB', text: '#92400E' },
+  'Called - Left VM': { bg: '#FFFBEB', text: '#92400E' },
+  'Called - Spoke to Gatekeeper': { bg: '#FEF3C7', text: '#B45309' },
+  'Called - Spoke to DM': { bg: '#F0FDF4', text: '#065F46' },
+  'Callback Scheduled': { bg: '#F5F3FF', text: '#7C3AED' },
+  'Interested': { bg: '#EEF2FF', text: '#4338CA' },
+  'Not Interested': { bg: '#F3F4F6', text: '#374151' },
+  'Do Not Call': { bg: '#FEF2F2', text: '#991B1B' },
+};
+
+export interface CallNote {
+  note: string;
+  timestamp: string;
+}
+
+export interface EnrichmentHistoryEntry {
+  source: string;
+  fieldsUpdated: string[];
+  timestamp: string;
+}
+
 export interface Contact {
   name: string;
   title: string;
@@ -111,6 +157,15 @@ export interface Company {
   qualification_status?: 'qualified' | 'unqualified' | 'review';
   qualification_result?: QualificationResult;
   contacts?: Contact[];
+  // Call sheet fields
+  call_status?: CallStatus;
+  call_notes?: CallNote[];
+  last_called_at?: string;
+  // Enrichment fields
+  enrichment_history?: EnrichmentHistoryEntry[];
+  vibe_score?: number;
+  blueprint_score?: number;
+  blueprint_grade?: string;
   [key: string]: unknown;
 }
 

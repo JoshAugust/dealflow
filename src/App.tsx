@@ -15,6 +15,8 @@ import ApiPortal from './pages/ApiPortal';
 import Portal from './pages/Portal';
 import Integrations from './pages/Integrations';
 import Qualification from './pages/Qualification';
+import CallSheet from './pages/CallSheet';
+import EnrichmentLab from './pages/EnrichmentLab';
 
 export default function App() {
   return (
@@ -35,6 +37,8 @@ export default function App() {
           <Route path="/api-docs" element={<ApiPortal />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/qualification" element={<Qualification />} />
+          <Route path="/call-sheet" element={<CallSheet />} />
+          <Route path="/enrichment" element={<EnrichmentLab />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
